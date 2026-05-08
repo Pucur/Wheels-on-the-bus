@@ -1,0 +1,12 @@
+RPi.GPIO
+evdev
+luma.oled
+pillow
+rpi-ws281x
+pyaudio
+numpy
+tm1637
+flask
+flask-socketio
+aiohttp
+smbus2

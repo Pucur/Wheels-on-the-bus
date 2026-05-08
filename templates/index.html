@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>The Wheels on the Bus</title>
+<link rel="icon" type="image/png" href="/static/minibus.png">
+<style>
+body {
+background:#111 url('/static/background.jpg') no-repeat center center fixed;
+background-size: cover;
+color: #e8f4f0;
+font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+text-align: center;
+padding: 20px;
+margin: 0;
+}
+
+h1 {
+font-size: 2.8em;
+margin: 0 0 20px 0;
+background: linear-gradient(45deg, #a3d9cc, #91c7b5, #7eb6a0);
+-webkit-background-clip: text;
+-webkit-text-fill-color: transparent;
+background-clip: text;
+text-shadow: 0 0 30px rgba(163, 217, 204, 0.8), 2px 2px 4px rgba(0,0,0,0.7);
+font-weight: 700;
+}
+
+h2 {
+color: #d4f1e6;
+font-size: 1.5em;
+margin: 30px 0 20px 0;
+text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+position: relative;
+}
+
+h2::before {
+content: '';
+position: absolute;
+bottom: -8px;
+left: 50%;
+transform: translateX(-50%);
+width: 80px;
+height: 4px;
+background: linear-gradient(90deg, transparent, #a3d9cc, #91c7b5, transparent);
+border-radius: 2px;
+}
+
+button {
+padding: 14px 28px;
+background: linear-gradient(145deg, rgba(30, 70, 60, 0.95), rgba(50, 90, 80, 0.95));
+backdrop-filter: blur(10px);
+border: 2px solid rgba(163, 217, 204, 0.6);
+color: #e8f4f0;
+margin: 8px;
+cursor: pointer;
+border-radius: 30px;
+font-weight: 600;
+font-size: 15px;
+box-shadow:
+0 8px 25px rgba(0,0,0,0.6),
+inset 0 1px 0 rgba(255,255,255,0.2);
+transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+position: relative;
+overflow: hidden;
+font-family: inherit;
+text-shadow: 0 1px 3px rgba(0,0,0,0.7);
+}
+
+button::before {
+content: '';
+position: absolute;
+top: 0;
+left: -100%;
+width: 100%;
+height: 100%;
+background: linear-gradient(90deg, transparent, rgba(163, 217, 204, 0.3), transparent);
+transition: left 0.5s;
+}
+
+button:hover::before { left: 100%; }
+
+button:hover {
+background: linear-gradient(145deg, rgba(70, 120, 110, 0.95), rgba(90, 140, 130, 0.95));
+border-color: rgba(163, 217, 204, 0.9);
+color: #f8faf9;
+transform: translateY(-3px);
+box-shadow:
+0 12px 35px rgba(0,0,0,0.7),
+inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+button:active { transform: translateY(-1px); }
+
+input[type=range], input[type=number], input[type=text] {
+width: 300px;
+padding: 12px 15px;
+border: 2px solid rgba(163, 217, 204, 0.6);
+border-radius: 20px;
+background: rgba(20, 40, 35, 0.9);
+color: #e8f4f0;
+font-size: 16px;
+margin: 10px;
+backdrop-filter: blur(10px);
+transition: all 0.3s ease;
+text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+input::placeholder { color: rgba(232, 244, 240, 0.7); }
+
+input:focus {
+outline: none;
+border-color: #a3d9cc;
+box-shadow:
+0 0 20px rgba(163, 217, 204, 0.4),
+inset 0 1px 0 rgba(255,255,255,0.1);
+background: rgba(25, 45, 40, 0.95);
+}
+
+ul { list-style: none; padding: 0; margin: 10px 0; }
+li { margin: 10px 0; }
+
+.music-box {
+width: 700px;
+max-width: 90vw;
+max-height: 500px;
+overflow-y: auto;
+border: 2px solid rgba(163, 217, 204, 0.5);
+margin: 20px auto;
+padding: 25px;
+background: rgba(20, 40, 35, 0.92);
+backdrop-filter: blur(15px);
+border-radius: 25px;
+box-shadow:
+0 15px 40px rgba(0,0,0,0.7),
+inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.music-container {
+  display: flex;
+  gap: 20px; /* térköz a két div között */
+  justify-content: center; /* középre igazítás */
+  flex-wrap: wrap; /* kisebb képernyőn egymás alá kerüljenek */
+}
+
+.music-section {
+  flex: 1 1 400px; /* növekedhet, csökkenhet, minimum szélesség 400px */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.battery-box {
+width: 230px;
+max-width: 90vw;
+max-height: 50px;
+overflow-y: auto;
+border: 2px solid rgba(163, 217, 204, 0.5);
+margin: 2px auto;
+padding: 2px;
+background: rgba(20, 40, 35, 0.92);
+backdrop-filter: blur(15px);
+border-radius: 25px;
+box-shadow:
+0 15px 40px rgba(0,0,0,0.7),
+inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+#cam_box, #mic_box {
+  display: none;
+  border: 2px solid rgba(163, 217, 204, 0.7);
+  width: auto;
+  margin: 20px auto;
+  padding: 20px;
+  background: rgba(20, 40, 35, 0.94);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  box-shadow:
+    0 20px 50px rgba(0,0,0,0.8),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+#cam_stream {
+  width: auto;
+  max-width: 1280px;
+  height: auto;              /* ✅ NE kényszeríts magasságot */
+  aspect-ratio: auto;        /* ✅ a stream diktál */
+  object-fit: contain;       /* ✅ ne vágjon */
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  display: block;
+  margin: 0 auto;
+  background: #000;
+}
+
+#volval { color: #a3d9cc; font-weight: 700; font-size: 1.3em; text-shadow: 0 2px 6px rgba(0,0,0,0.8); margin-left: 10px; }
+
+#mic_status { font-size: 1.2em; margin: 10px; }
+.live { color: #0f0 !important; animation: blink 1s infinite; }
+@keyframes blink { 50% { opacity: 0.5; } }
+
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: rgba(20, 40, 35, 0.8); border-radius: 10px; }
+::-webkit-scrollbar-thumb {
+background: linear-gradient(#91c7b5, #a3d9cc);
+border-radius: 10px;
+border: 2px solid rgba(20, 40, 35, 0.9);
+}
+::-webkit-scrollbar-thumb:hover { background: linear-gradient(#a3d9cc, #b8e6d8); }
+
+select {
+width: 300px;
+padding: 12px 15px;
+border: 2px solid rgba(163, 217, 204, 0.6);
+border-radius: 20px;
+background: rgba(20, 40, 35, 0.9);
+color: #e8f4f0;
+font-size: 16px;
+margin: 10px;
+backdrop-filter: blur(10px);
+transition: all 0.3s ease;
+}
+
+select:focus {
+outline: none;
+border-color: #a3d9cc;
+box-shadow: 0 0 20px rgba(163, 217, 204, 0.4);
+}
+
+.cam-status {
+font-size: 1.2em;
+margin-bottom: 12px;
+padding: 10px 16px;
+border-radius: 999px;
+display: inline-block;
+background: rgba(255,255,255,0.10);
+border: 1px solid rgba(255,255,255,0.18);
+}
+
+.cam-status.on {
+background: rgba(46, 204, 113, 0.35);
+border-color: rgba(46, 204, 113, 0.55);
+box-shadow: 0 0 25px rgba(46, 204, 113, 0.25);
+}
+
+.cam-status.off {
+background: rgba(231, 76, 60, 0.25);
+border-color: rgba(231, 76, 60, 0.45);
+box-shadow: 0 0 25px rgba(231, 76, 60, 0.18);
+}
+
+.cam-loading {
+display: none;
+font-size: 1.1em;
+margin: 10px 0 14px 0;
+color: #f39c12;
+animation: camPulse 1.5s infinite;
+}
+
+.cam-loading.show { display: block; }
+
+@keyframes camPulse {
+0%, 100% { opacity: 1; }
+50% { opacity: 0.5; }
+}
+
+#cam_error {
+display: none;
+color: #ff6b6b;
+font-size: 1.1em;
+margin-top: 12px;
+}
+</style>
+</head>
+<body>
+<h1>The Wheels on the Bus</h1>
+
+<h2>Alap funkciók</h2>
+<button onclick="send('led_toggle')">Első Lámpa</button>
+<button onclick="send('bushorn')">Duda</button>
+<button onclick="toggleCam()">Kamera</button>
+<button id="mic_btn">Mikrofon</button>
+<button onclick="send('sleep')">Alvó zene</button>
+
+<div id="mic_box">
+<input type="range" id="mic_vol" min="10" max="80" value="40" step="10">
+<div id="mic_status">KI</div>
+</div>
+
+<div id="cam_box">
+<select id="cam_resolution" onchange="setCameraResolution(this.value)">
+  <option value="854×480">854×480</option>
+  <option value="1280x720">1280×720 (HD)</option>
+</select>
+<img id="cam_stream" align="center" src="">
+<div id="cam_error">❌ Kamera stream hiba</div>
+</div>
+
+<div class="battery-box">
+🔋Akku: <span id="battery_percent">⚡Hálózaton</span>
+(<span id="battery_voltage"></span> V)
+</div>
+
+<script>
+setInterval(() => {
+  fetch("/battery_status")
+    .then(r => r.json())
+    .then(data => {
+      const percentEl = document.getElementById("battery_percent");
+      const voltEl = document.getElementById("battery_voltage");
+
+      if (data.percent === null || data.percent === undefined) {
+        // ⚡ Hálózaton
+        percentEl.innerText = "⚡Hálózaton";
+        voltEl.innerText = "";
+        voltEl.style.display = "none";   // ⬅️ EZ A LÉNYEG
+      } else {
+        // 🔋 Akkuról
+        percentEl.innerText = data.percent + " %";
+        voltEl.innerText = data.voltage;
+        voltEl.style.display = "inline"; // ⬅️ vissza
+      }
+    })
+    .catch(() => {
+      document.getElementById("battery_percent").innerText = "--";
+      document.getElementById("battery_voltage").innerText = "";
+      document.getElementById("battery_voltage").style.display = "none";
+    });
+}, 5000);
+</script>
+<h2>Úticél</h2>
+<input id="oled_text" type="text" placeholder="OLED TEXT" value="{{ oled_current_text or '' }}">
+<button onclick="oledSet()">Küld</button>
+<button onclick="send('oled_off')">Kikapcsolás</button>
+
+<h2>Járatszám</h2>
+<input id="tm_val" type="number" placeholder="1234" value="{{ tm_current_val or '' }}">
+<button onclick="tmSet()">Küld</button>
+<button onclick="send('tm_off')">Kikapcsolás</button>
+<button onclick="send('tm_clock_on')">Óra üzemmód</button>
+
+<button id="led_toggle_btn" onclick="toggleLed()">💡 LED BE</button>
+
+<div id="led_effect_box" style="display:none;">
+<select id="led_effect_select" onchange="setLedEffect(this.value)">
+<option value="rainbow">🌈 Rainbow</option>
+<option value="breathing">💓 Breathing</option>
+<option value="scanner">🔴 Scanner</option>
+<option value="sparkle">✨ Sparkle</option>
+<option value="meteor">☄ Meteor</option>
+<option value="pulse">🌊 Pulse</option>
+<option value="police">🚨 Police</option>
+</select>
+</div>
+
+<h2>Hangerő</h2>
+<input type="range" min="0" max="100" value="{{ current_volume }}" oninput="setVolume(this.value)">
+<br><span id="volval">{{ current_volume }}</span> %<br>
+      <button onclick="playCurrent()">▶️Play</button>
+      <button onclick="pauseCurrent()">⏸️Pause</button>
+      <button onclick="shuffleCurrent()">🔀Shuffle</button>
+<div class="music-container">
+  <div class="music-section">
+    <h2>Zene lista</h2>
+    <div class="music-box">
+
+      <ul>
+        {% for m in music_files %}
+        <li><button onclick="playMusic('{{ m }}')">{{ m }}</button></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="music-section">
+    <h2>Hangoskönyvek</h2>
+    <div class="music-box">
+      <ul>
+        {% for b in audiobook_files %}
+        <li><button onclick="playAudiobook('{{ b }}')">📖 {{ b }}</button></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+let micActive = false;
+let micStream, micCtx, micProc;
+
+const socket = io({ transports: ['websocket'], secure: true });
+
+let ledEnabled = false;
+
+let camWS = null;
+let camActive = false;
+
+function playAudiobook(name) {
+    fetch("/send_command", {
+        method: "POST",
+        headers: {"Content-Type": "application/x-www-form-urlencoded"},
+        body: "cmd=play_audiobook&value=" + encodeURIComponent(name)
+    });
+}
+
+function setCameraResolution(res) {
+  if (!camWS || camWS.readyState !== WebSocket.OPEN) return;
+
+  camWS.send(JSON.stringify({
+    action: "set_resolution",
+    resolution: res
+  }));
+
+  // MJPEG újratöltése (fontos!)
+  const img = document.getElementById('cam_stream');
+  if (camActive) {
+    img.src = '';
+    setTimeout(() => {
+      img.src = 'https://' + window.location.hostname + ':8443/stream.mjpg?' + Date.now();
+    }, 1500);
+  }
+}
+
+function camConnectWebSocket() {
+camWS = new WebSocket('wss://' + window.location.host + ':8443/ws');
+
+camWS.onmessage = (event) => {
+let data;
+try { data = JSON.parse(event.data); } catch(e){ return; }
+
+const statusEl = document.getElementById('cam_status');
+const loadingEl = document.getElementById('cam_loading');
+const errorEl = document.getElementById('cam_error');
+const box = document.getElementById('cam_box');
+
+if (data.status === 'camera_on') {
+camActive = true;
+box.style.display = 'block';
+statusEl.textContent = '🟢 Kamera aktív';
+statusEl.className = 'cam-status on';
+loadingEl.classList.remove('show');
+errorEl.style.display = 'none';
+setTimeout(() => camUpdateVideo(true), 1000);
+} else if (data.status === 'camera_off') {
+camActive = false;
+loadingEl.classList.remove('show');
+camUpdateVideo(false);
+statusEl.textContent = '🔴 Kamera kikapcsolva';
+statusEl.className = 'cam-status off';
+errorEl.style.display = 'none';
+}
+};
+
+camWS.onclose = () => {
+setTimeout(camConnectWebSocket, 2000);
+};
+
+camWS.onerror = () => {};
+}
+
+function camUpdateVideo(active) {
+const img = document.getElementById('cam_stream');
+const errorEl = document.getElementById('cam_error');
+if (active) {
+const src = 'https://' + window.location.hostname + ':8443/stream.mjpg?' + Date.now();
+img.src = src;
+img.style.display = 'block';
+errorEl.style.display = 'none';
+
+img.onerror = () => {
+errorEl.style.display = 'block';
+setTimeout(() => camUpdateVideo(true), 2000);
+};
+} else {
+img.src = '';
+img.style.display = 'none';
+errorEl.style.display = 'none';
+}
+}
+
+function toggleCam(){
+  const box = document.getElementById('cam_box');
+  const img = document.getElementById('cam_stream');
+
+  camActive = !camActive;
+
+  if (camActive) {
+    box.style.display = 'block';
+    img.src = 'https://' + window.location.hostname + ':8443/stream.mjpg?' + Date.now();
+    img.style.display = 'block';
+
+    // backendnek jelezzük (ha kell)
+    if (camWS && camWS.readyState === WebSocket.OPEN) {
+      camWS.send(JSON.stringify({ action: 'toggle_camera' }));
+    }
+
+  } else {
+    // 🔴 KIKAPCSOLÁS
+    img.src = '';               // stream bontása
+    img.style.display = 'none';
+    box.style.display = 'none';
+
+    if (camWS && camWS.readyState === WebSocket.OPEN) {
+      camWS.send(JSON.stringify({ action: 'toggle_camera' }));
+    }
+  }
+}
+camConnectWebSocket();
+
+function toggleLed(){
+ledEnabled = !ledEnabled;
+
+const btn = document.getElementById("led_toggle_btn");
+const box = document.getElementById("led_effect_box");
+
+if(ledEnabled){
+btn.innerHTML = "💡 LED KI";
+box.style.display = "block";
+send("led_effect", "rainbow");
+} else {
+btn.innerHTML = "💡 LED BE";
+box.style.display = "none";
+send("led_effect", "off");
+}
+}
+
+function setLedEffect(effect){
+if(!ledEnabled) return;
+send("led_effect", effect);
+}
+
+function send(cmd, value=""){
+fetch("/send_command", {
+method: "POST",
+headers: {"Content-Type": "application/x-www-form-urlencoded"},
+body: "cmd=" + encodeURIComponent(cmd) + "&value=" + encodeURIComponent(value)
+});
+}
+
+function oledSet(){
+const txt = document.getElementById("oled_text").value;
+fetch("/send_command", {
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:"cmd=oled_set&value=" + encodeURIComponent(txt)
+});
+}
+
+function tmSet(){
+const val = document.getElementById("tm_val").value;
+fetch("/send_command", {
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:"cmd=tm1637_set&value=" + encodeURIComponent(val)
+});
+}
+
+function playMusic(name){
+fetch("/send_command", {
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:"cmd=play_music&value=" + encodeURIComponent(name)
+});
+}
+
+function setVolume(v){
+document.getElementById("volval").innerText=v;
+fetch("/send_command",{
+method:"POST",
+headers:{"Content-Type":"application/x-www-form-urlencoded"},
+body:"cmd=set_volume&value="+encodeURIComponent(v)
+});
+}
+
+function playCurrent(){ send("mpv_play"); }
+function pauseCurrent(){ send("mpv_pause"); }
+function shuffleCurrent(){ send("mpv_shuffle"); }
+
+const micBtn = document.getElementById('mic_btn');
+const micBox = document.getElementById('mic_box');
+const micStatus = document.getElementById('mic_status');
+
+micBtn.onclick = async () => {
+if(!micActive){
+try{
+micBtn.disabled = true;
+micBtn.innerHTML = '⏳...';
+micBox.style.display = 'block';
+micStatus.innerHTML = '🔄 MIKROFON...';
+
+micStream = await navigator.mediaDevices.getUserMedia({
+audio: { sampleRate: 22050, channelCount: 1, echoCancellation:true, noiseSuppression:true }
+});
+
+micCtx = new AudioContext({sampleRate:22050});
+const source = micCtx.createMediaStreamSource(micStream);
+micProc = micCtx.createScriptProcessor(2048,1,1);
+
+micProc.onaudioprocess = e => {
+if(!micActive) return;
+const input = e.inputBuffer.getChannelData(0);
+const stereo = new Int16Array(input.length*2);
+for(let i=0;i<input.length;i++){
+const s = Math.max(-1,Math.min(1,input[i]))*32767;
+stereo[i*2] = s;
+stereo[i*2+1] = s;
+}
+const bytes = new Uint8Array(stereo.buffer);
+if(socket.connected) socket.emit('audio', btoa(String.fromCharCode(...bytes)));
+};
+
+source.connect(micProc);
+micProc.connect(micCtx.destination);
+
+micActive = true;
+micBtn.innerHTML = '⏹️ STOP';
+micStatus.innerHTML = '🔴 ÉLŐ';
+micStatus.className = 'live';
+micBtn.disabled = false;
+
+}catch(e){
+alert('❌ MIKROFON HIBA: '+e.message);
+micBtn.disabled=false;
+micBtn.innerHTML='🎤 MIKROFON';
+micBox.style.display='none';
+}
+} else {
+micBtn.disabled=true;
+socket.emit('mic_stop');
+
+if(micStream) micStream.getTracks().forEach(t=>t.stop());
+if(micCtx) micCtx.close();
+micActive=false;
+
+micBtn.innerHTML='🎤 MIKROFON';
+micStatus.innerHTML='KI';
+micStatus.className='';
+micBox.style.display='none';
+micBtn.disabled=false;
+}
+};
+
+document.getElementById('mic_vol').oninput = e => {
+if(socket.connected) socket.emit('mic_volume', e.target.value);
+};
+</script>
+</body>
+</html>
