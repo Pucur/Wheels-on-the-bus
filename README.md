@@ -33,6 +33,12 @@ Perfect for DIY IoT projects, smart toys, and interactive kids’ builds.
 
 ---
 
+# 📸 Wirings
+
+![Bus](https://i.kek.sh/HnJP23avNsx.jpg)
+
+---
+
 # 🛠️ Hardware Setup
 
 ## Raspberry Pi (Zero 2 / 4 recommended)
