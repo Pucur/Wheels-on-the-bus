@@ -415,28 +415,6 @@ audiobook_files = sorted([f for f in os.listdir(AUDIOBOOK_DIR) if f.lower().ends
 mpv_process = None
 MPV_SOCKET = "/tmp/mpvsocket"
 
-# --- Audio check ---
-
-
-def audio_idle_watchdog():
-    while True:
-        try:
-            mpv_running = (mpv_process is not None and mpv_process.poll() is None)
-            mpg_running = subprocess.run(
-                ["pgrep", "-f", "mpg123"],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            ).returncode == 0
-
-            if not (mpv_running or mpg_running):
-                subprocess.run(["pactl", "suspend-sink", "0", "1"],
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            else:
-                subprocess.run(["pactl", "suspend-sink", "0", "0"],
-                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except Exception:
-            pass
-        time.sleep(5)
-
 # --- MPV helper definitions ---
 
 def start_mpv_daemon():
@@ -1328,7 +1306,6 @@ if __name__=="__main__":
     threading.Thread(target=process_queue, daemon=True).start()
     threading.Thread(target=mpv_event_listener, daemon=True).start()
     threading.Thread(target=start_camera_server,daemon=True).start()
-    threading.Thread(target=audio_idle_watchdog, daemon=True).start()
     start_mpv_daemon()
 
     subprocess.run(['mpg123','-q','-o','alsa:dmix','-f','684', os.path.join(SOUNDS_DIR, "bushorn.mp3")])
