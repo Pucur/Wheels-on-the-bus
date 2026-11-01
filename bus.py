@@ -419,8 +419,22 @@ MPV_SOCKET = "/tmp/mpvsocket"
 
 def start_mpv_daemon():
     global mpv_process
+    # Stop any previously running mpv instance first (avoid duplicate processes / socket conflicts)
+    if mpv_process is not None and mpv_process.poll() is None:
+        try:
+            mpv_process.terminate()
+            mpv_process.wait(timeout=2)
+        except Exception:
+            try:
+                mpv_process.kill()
+            except Exception:
+                pass
+    mpv_process = None
     if os.path.exists(MPV_SOCKET):
-        os.remove(MPV_SOCKET)
+        try:
+            os.remove(MPV_SOCKET)
+        except OSError:
+            pass
     mpv_process = subprocess.Popen([
         "mpv", "--no-video", f"--input-ipc-server={MPV_SOCKET}",
         "--idle=yes", "--volume="+str(current_volume)
@@ -904,13 +918,13 @@ def handle_mic_stop():
     mic_active = False
 
     threading.Thread(target=mpv_event_listener, daemon=True).start()
-    start_mpv_daemon()
+    # mpv is started lazily on next playback to avoid idle hum
 
 # --- BUS MODE ---
 
 def bus_mode():
     global bus_sounds_on, shuffle_mode, bus_engine_boot
-    mpv_command(["stop"])
+    mpv_command(["quit"])
     update_oled_display(f"BUS MODE {'ON' if bus_sounds_on else 'OFF'}", duration=3)
     shuffle_mode = False
     if bus_sounds_on == True and bus_engine_boot == False:
@@ -977,9 +991,22 @@ def process_controller(dev):
                         if key == e.BTN_SOUTH and held_time < LONG_PRESS_TIME:
                             cmd_queue.put(('led_toggle', ''))
 
-                        elif key == e.BTN_NORTH and held_time < NORTH_LONG_TIME:
-                            bus_sounds_on = not bus_sounds_on
-                            bus_mode()
+                        elif key == e.BTN_NORTH:
+                            if held_time < NORTH_LONG_TIME:
+                                bus_sounds_on = not bus_sounds_on
+                                bus_mode()
+                            else:
+                                # long press -> shuffle (also handled on release so it works
+                                # even if no events fired while holding the button)
+                                if last_repeat.get(key) != "handled":
+                                    update_oled_display("SHUFFLE MUSIC", duration=3)
+                                    bus_sounds_on = False
+                                    audiobook_playing = False
+                                    shuffle_mode = True
+                                    mpv_command(["set_property", "pause", False])
+                                    play_random_music_track()
+                                    mpv_command(["set_property", "pause", False])
+                                    last_repeat[key] = "handled"
 
                         pressed_since.pop(key, None)
                         last_repeat.pop(key, None)
@@ -1048,6 +1075,7 @@ def process_controller(dev):
                             shuffle_mode = True
                             mpv_command(["set_property", "pause", False])
                             play_random_music_track()
+                            mpv_command(["set_property", "pause", False])
                             last_repeat[key] = "handled"
 
                     elif key == e.BTN_SOUTH and held_time > LONG_PRESS_TIME:
@@ -1073,8 +1101,8 @@ def play_bushorn():
     global bus_sounds_on
     if bus_sounds_on == False:
         subprocess.run(["pkill", "-f", "mpg123"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    mpv_command(["stop"])
-    time.sleep(0.1)
+    mpv_command(["quit"])
+    time.sleep(0.3)
     subprocess.run(['mpg123','-q','-o','alsa:dmix','-f','2184', os.path.join(SOUNDS_DIR, "bushorn.mp3")])
     if manual_track_playing is not None or shuffle_mode is True:
         play_random_music_track()
@@ -1086,7 +1114,7 @@ def play_sleep():
     subprocess.run(["pkill", "-f", "mpg123"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     shuffle_mode = False
     audiobook_playing = False
-    mpv_command(["stop"])
+    mpv_command(["quit"])
     GPIO.output(LED_PIN, False)
     display_on = False
     stop_led_effect()
@@ -1105,6 +1133,7 @@ def play_random_music_track():
     global current_music_index, oled_on, manual_track_playing
 
     subprocess.run(["pkill", "-f", "mpg123"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(0.3)  # let mpg123 release the audio device before (re)starting mpv
 
     if music_files:
         if not os.path.exists(MPV_SOCKET) or mpv_process is None or mpv_process.poll() is not None:
@@ -1122,7 +1151,7 @@ def play_random_music_track():
             threading.Thread(target=lambda: (time.sleep(3), oled_device.clear()), daemon=True).start()
 
 def mpv_event_listener():
-    global shuffle_mode, manual_track_playing
+    global shuffle_mode, manual_track_playing, audiobook_playing
 
     while True:
         if not os.path.exists(MPV_SOCKET):
@@ -1156,6 +1185,9 @@ def mpv_event_listener():
                                 play_random_music_track()
                             else:
                                 manual_track_playing = None
+                                audiobook_playing = False
+                                # mpv not needed anymore -> quit so it doesn't hold the audio device (hum)
+                                mpv_command(["quit"])
 
                 except json.JSONDecodeError:
                     continue
@@ -1172,7 +1204,7 @@ def mpv_event_listener():
 def process_queue():
         global led_state, display_on, oled_on, tm_current_val
         global current_speed_percent, current_volume, manual_track_playing, shuffle_mode, tm_clock_enabled, audiobook_playing
-        global mpv_process
+        global mpv_process, bus_sounds_on
 
         while True:
             try:
@@ -1216,8 +1248,10 @@ def process_queue():
                     file_path = os.path.join(MUSIC_DIR, val)
                     if os.path.exists(file_path):
                         subprocess.run(["pkill", "-f", "mpg123"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        time.sleep(0.3)
                         if not os.path.exists(MPV_SOCKET) or mpv_process is None or mpv_process.poll() is not None:
                             start_mpv_daemon()
+                        bus_sounds_on = False
                         shuffle_mode = False
                         manual_track_playing = file_path
                         mpv_loadfile(file_path)
@@ -1232,8 +1266,10 @@ def process_queue():
                     file_path = os.path.join(AUDIOBOOK_DIR, val)
                     if os.path.exists(file_path):
                         subprocess.run(["pkill", "-f", "mpg123"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        time.sleep(0.3)
                         if not os.path.exists(MPV_SOCKET) or mpv_process is None or mpv_process.poll() is not None:
                             start_mpv_daemon()
+                        bus_sounds_on = False
                         shuffle_mode = False
                         audiobook_playing = True
                         manual_track_playing = file_path
@@ -1254,9 +1290,11 @@ def process_queue():
 
             elif cmd == 'mpv_shuffle':
                 start_led_effect(rainbow_fade)
+                bus_sounds_on = False
                 shuffle_mode = True
                 audiobook_playing = False
                 play_random_music_track()
+                mpv_command(["set_property", "pause", False])
             elif cmd == 'set_volume':
                 set_mpv_volume(val)
                 if oled_on:
@@ -1306,7 +1344,9 @@ if __name__=="__main__":
     threading.Thread(target=process_queue, daemon=True).start()
     threading.Thread(target=mpv_event_listener, daemon=True).start()
     threading.Thread(target=start_camera_server,daemon=True).start()
-    start_mpv_daemon()
+
+    # mpv daemon is started lazily (only when audio is actually played)
+    # via start_mpv_daemon() inside play_random_music_track / play_music / play_audiobook / handle_mic_stop
 
     subprocess.run(['mpg123','-q','-o','alsa:dmix','-f','684', os.path.join(SOUNDS_DIR, "bushorn.mp3")])
 
